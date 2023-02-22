@@ -16,13 +16,13 @@
 /*! Size of one sector. */
 #define SECTOR_SIZE 0x200
 #define BUFFER_SIZE 0x100000
-#define TOTAL_SIZE 0x200000 //0x180000000
-#define IVOFFSET 0x1800000000
+#define TOTAL_SIZE 0x180000000 //your partition size
+#define IVOFFSET 0x1800000000 //0 or any value of index -1 << 32 (check wiki)
 
 int main(int argc, char **argv)
 {
 
-	unsigned int j=0;
+	unsigned long j=0;
 	
 	while(j < TOTAL_SIZE){ 
 	
@@ -40,16 +40,16 @@ int main(int argc, char **argv)
 	
 	
 		FILE *fp = fopen("update.bin","rb");
-		printf("%08X\n", j);
+		//printf("%08X\n", j);
 		fseek(fp,j,SEEK_SET);
 		read = fread(buf,BUFFER_SIZE,1,fp);
 		fclose(fp);
 
 		aes_xts_ctxt_t ctx;
 		aes_xts_init(&ctx, AES_DECRYPT, data, tweak, 128);
-		unsigned int i = 0;
-		unsigned int k = (i + j) / SECTOR_SIZE;
-		printf("%08X\n", k);
+		unsigned long i = 0;
+		unsigned long k = (i + j) / SECTOR_SIZE;
+		//printf("%08X\n", k);
 		for(i = 0; i < (BUFFER_SIZE / SECTOR_SIZE); i++){
 			aes_xts_crypt(&ctx, IVOFFSET + i + k, SECTOR_SIZE, buf + (i *SECTOR_SIZE), buf + (i *SECTOR_SIZE));
 		}
