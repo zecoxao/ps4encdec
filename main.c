@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 		unsigned long k = (i + j) / SECTOR_SIZE;
 		//printf("%08X\n", k);
 		for(i = 0; i < (BUFFER_SIZE / SECTOR_SIZE); i++){
-			aes_xts_crypt(&ctx, (unsigned int)atoi(argv[4]) + i + k, SECTOR_SIZE, buf + (i *SECTOR_SIZE), buf + (i *SECTOR_SIZE));
+			aes_xts_crypt(&ctx, (unsigned long)atol(argv[4]) + i + k, SECTOR_SIZE, buf + (i *SECTOR_SIZE), buf + (i *SECTOR_SIZE));
 		}
 		FILE *fx = fopen (argv[3],"ab+");
 		fwrite(buf,BUFFER_SIZE,1,fx);
