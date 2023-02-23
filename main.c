@@ -16,20 +16,28 @@
 /*! Size of one sector. */
 #define SECTOR_SIZE 0x200
 #define BUFFER_SIZE 0x100000
-#define TOTAL_SIZE 0x180000000 //your partition size
-#define IVOFFSET 0x1800000000 //0 or any value of index -1 << 32 (check wiki)
 
 int main(int argc, char **argv)
 {
+	//doing like the russian master
+	if (argc < 5) {
+		fprintf(stdout, "usage: %s <keys> <input> <output> <ivoffset>\n", argv[0]);
+		return 0;
+	}
 
 	unsigned long j=0;
 	
-	while(j < TOTAL_SIZE){ 
+	FILE *fp = fopen(argv[2],"rb");
+	fseek(fp,0,SEEK_END);
+	unsigned long size = ftell(fp);
+	fclose(fp);
+	
+	while(j < size){ 
 	
 		unsigned char data [16];
 		unsigned char tweak [16];
 	
-		FILE * fk = fopen("keys.bin","rb");
+		FILE * fk = fopen(argv[1],"rb");
 		int read = fread(data,0x10,1,fk);
 		read = fread(tweak,0x10,1,fk);
 		fclose(fk);
@@ -39,7 +47,7 @@ int main(int argc, char **argv)
 	
 	
 	
-		FILE *fp = fopen("update.bin","rb");
+		fp = fopen(argv[2],"rb");
 		//printf("%08X\n", j);
 		fseek(fp,j,SEEK_SET);
 		read = fread(buf,BUFFER_SIZE,1,fp);
@@ -51,9 +59,9 @@ int main(int argc, char **argv)
 		unsigned long k = (i + j) / SECTOR_SIZE;
 		//printf("%08X\n", k);
 		for(i = 0; i < (BUFFER_SIZE / SECTOR_SIZE); i++){
-			aes_xts_crypt(&ctx, IVOFFSET + i + k, SECTOR_SIZE, buf + (i *SECTOR_SIZE), buf + (i *SECTOR_SIZE));
+			aes_xts_crypt(&ctx, (unsigned int)atoi(argv[4]) + i + k, SECTOR_SIZE, buf + (i *SECTOR_SIZE), buf + (i *SECTOR_SIZE));
 		}
-		FILE *fx = fopen ("out.bin","ab+");
+		FILE *fx = fopen (argv[3],"ab+");
 		fwrite(buf,BUFFER_SIZE,1,fx);
 		fclose(fx);
 		
