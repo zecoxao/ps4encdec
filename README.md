@@ -7,4 +7,4 @@ For more information see:
 
 # Usage :
 
-./ps4hdd data_key tweak_key input output ivoffset
+./ps4-hdd data_key tweak_key input output ivoffset
