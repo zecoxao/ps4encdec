@@ -1,3 +1,4 @@
+#include <chrono>
 #include <fcntl.h>
 #include <fstream>
 #include <future>
@@ -8,6 +9,7 @@
 #include <vector>
 #include "mio.hpp"
 #include "aes_xts.hpp"
+#include <print>
 
 static const uint32_t SECTOR_SIZE = 512;
 
@@ -99,7 +101,7 @@ int main(int argc, const char *argv[]) {
     }
 
     const auto processor_count = std::thread::hardware_concurrency();
-    printf("Found %d cores\n", processor_count);
+    printf("Decrypting '%s' with %d threads using AES-NI\n", in_filepath, processor_count);
 
     std::vector<std::thread> threads;
     std::promise<void> p;
@@ -112,7 +114,7 @@ int main(int argc, const char *argv[]) {
         return -1;
     }
 
-    // create output file with the input file size
+    // create (sparse) output file with the input file size
     uint64_t source_len = source.size();
     int ret = create_sparse(out_filepath, source_len);
     if (ret != 0) {
@@ -120,8 +122,8 @@ int main(int argc, const char *argv[]) {
         return -1;
     }
 
-    print_hex("XTS KEY", xts_key);
-    print_hex("XTS TWK", xts_tweak);
+    //print_hex("XTS KEY", xts_key);
+    //print_hex("XTS TWK", xts_tweak);
 
     mio::shared_mmap_sink output = mio::make_mmap_sink(out_filepath, 0, mio::map_entire_file, error);
     if (error) {
@@ -133,6 +135,7 @@ int main(int argc, const char *argv[]) {
     uint64_t slice_size = num_sectors / processor_count;
     uint64_t slice_start = 0;
 
+    // create threads
     for (auto i = processor_count; i > 0; --i) {
         uint64_t slice_end = slice_start + slice_size;
         if (i == 1) {
@@ -141,14 +144,17 @@ int main(int argc, const char *argv[]) {
         threads.emplace_back([sf, i, source, slice_start, slice_end, xts_key, xts_tweak, iv_offset](mio::shared_mmap_sink output) {
             sf.wait();
             auto xts = Cipher::AES::XTS_128(xts_key, xts_tweak, SECTOR_SIZE);
-            printf("Thread % 2d sectors %ld - %ld\n", i, slice_start, slice_end);
-            //uint64_t num_sectors = source_len / SECTOR_SIZE;
+            //printf("Thread % 2d sectors %ld - %ld\n", i, slice_start, slice_end);
+
             for (uint64_t sector_index = slice_start; sector_index < slice_end; ++sector_index) {
                 xts.crypt(Cipher::Mode::Decrypt, sector_index + iv_offset, &source[SECTOR_SIZE * sector_index], &output[SECTOR_SIZE * sector_index]);
             }
         }, output);
         slice_start += slice_size;
     }
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     // kick off threads
     p.set_value();
 
@@ -157,14 +163,11 @@ int main(int argc, const char *argv[]) {
         t.join();
     }
 
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto elapsed_sec = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    std::println("Decrypted in {}m{:02}s", elapsed_sec / 60, elapsed_sec % 60);
+    std::printf("Speed %4.2f MiB/sec\n", source_len / 1024 / 1024.0 / elapsed_sec);
+    std::println("Please wait while data is flushed to disk");
 
-/*
-    auto xts = Cipher::AES::XTS_128(xts_key, xts_tweak, SECTOR_SIZE);
-
-    uint64_t num_sectors = source_len / SECTOR_SIZE;
-    for (uint64_t sector_index = 0; sector_index < num_sectors; ++sector_index) {
-        xts.crypt(Cipher::Mode::Decrypt, sector_index + iv_offset, &source[SECTOR_SIZE * sector_index], &output[SECTOR_SIZE * sector_index]);
-    }
-*/
     return 0;
 }
