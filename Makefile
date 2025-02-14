@@ -1,18 +1,23 @@
 CC=gcc
-CFLAGS = 
+CXX=g++
+STRIP=strip
+# NEON is untested
+#AES_FLAGS = -D USE_NEON_AES
+#AES_FLAGS = -D USE_CXX_AES
+AES_FLAGS = -D USE_INTEL_AESNI -maes
+CFLAGS= -std=c99
+CXXFLAGS= -std=c++23 $(AES_FLAGS)
+CPPFLAGS= -Wall -O3
 
-ifeq ($(DEBUG), 1)
-CFLAGS+=-g -O0
-else
-CFLAGS+=-O2
-endif
+TARGET = ps4-hdd
+OBJS=main.o aes_xts.o
 
-OUT=ps4encdec
+$(TARGET): $(OBJS)
+	$(CXX) $(CPPFLAGS) $(OBJS) -o $(TARGET)
+	$(STRIP) --strip-all $(TARGET)
 
-OBJ=main.o aes.o aes_xts.o util.o
+all: $(TARGET)
 
-all: $(OBJ)
-	$(CC) $(CFLAGS)	-o $(OUT) $(OBJ)
-
+.PHONY: clean
 clean:
-	rm -f *.o $(OUT) *~
+	rm -f $(OBJS) $(TARGET)
