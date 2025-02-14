@@ -607,7 +607,7 @@ namespace Cipher {
      * @param key A `unsigned char *` array that contains the AES key.
      * This key should either be **16, 24, 32** bytes, or `128`, `192`, `256` bits.
      */
-    Aes(unsigned char key[key_bits]) : round_keys() {
+    Aes(const unsigned char key[key_bits]) : round_keys() {
       constexpr bool invalid_aes_key_bit_size = key_bits == 128 || key_bits == 192 || key_bits == 256;
       static_assert(invalid_aes_key_bit_size, "The valid values are only: 128, 192 & 256");
 

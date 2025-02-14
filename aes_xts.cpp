@@ -25,14 +25,14 @@ namespace Cipher::AES {
 			tweak.bytes[0] ^= 0x87;
 	} 
 
-	XTS_128::XTS_128(std::vector<uint8_t> &data_key, std::vector<uint8_t> &tweak_key, uint32_t sector_size) : 
+	XTS_128::XTS_128(const std::vector<uint8_t> &data_key, const std::vector<uint8_t> &tweak_key, uint32_t sector_size) : 
 		tweak(Cipher::Aes<128>(tweak_key.data())),
 		cipher(Cipher::Aes<128>(data_key.data())),
 		sector_size(sector_size) {
 			// nada
 	}
 
-	int XTS_128::crypt(Mode mode, uint64_t tweak_seed, char *in, char *out) {
+	int XTS_128::crypt(Mode mode, uint64_t tweak_seed, const char *in, char *out) {
 		Tweak tweak;
 		uint8_t buf[0x10];
 

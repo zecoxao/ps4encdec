@@ -15,8 +15,8 @@ namespace Cipher {
 			Aes<128> cipher;
 			uint32_t sector_size;
 			public:
-				XTS_128(std::vector<uint8_t> &data_key, std::vector<uint8_t> &tweak_key, uint32_t sector_size);
-				int crypt(Mode mode, uint64_t seqno, char *in, char *out);
+				XTS_128(const std::vector<uint8_t> &data_key, const std::vector<uint8_t> &tweak_key, uint32_t sector_size);
+				int crypt(Mode mode, uint64_t seqno, const char *in, char *out);
 		};
 	};
 };

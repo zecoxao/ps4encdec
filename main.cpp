@@ -1,7 +1,9 @@
 #include <fcntl.h>
 #include <fstream>
+#include <future>
 #include <stdint.h>
 #include <stdio.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 #include "mio.hpp"
@@ -96,8 +98,15 @@ int main(int argc, const char *argv[]) {
         return -1;
     }
 
-    // mmap input file read only
-    mio::mmap_source source = mio::make_mmap_source(in_filepath, 0, mio::map_entire_file, error);
+    const auto processor_count = std::thread::hardware_concurrency();
+    printf("Found %d cores\n", processor_count);
+
+    std::vector<std::thread> threads;
+    std::promise<void> p;
+    auto sf = p.get_future().share();
+
+    // mmap input file read only with shared semantics
+    mio::shared_mmap_source source = mio::make_mmap_source(in_filepath, 0, mio::map_entire_file, error);
     if (error) {
         handle_error(error);
         return -1;
@@ -111,22 +120,51 @@ int main(int argc, const char *argv[]) {
         return -1;
     }
 
-    // mmap output file read/write
-    mio::mmap_sink output = mio::make_mmap_sink(out_filepath, 0, mio::map_entire_file, error);
+    print_hex("XTS KEY", xts_key);
+    print_hex("XTS TWK", xts_tweak);
+
+    mio::shared_mmap_sink output = mio::make_mmap_sink(out_filepath, 0, mio::map_entire_file, error);
     if (error) {
         handle_error(error);
         return -1;
     }
 
-    print_hex("XTS KEY", xts_key);
-    print_hex("XTS TWK", xts_tweak);
+    uint64_t num_sectors = source_len / SECTOR_SIZE;
+    uint64_t slice_size = num_sectors / processor_count;
+    uint64_t slice_start = 0;
 
+    for (auto i = processor_count; i > 0; --i) {
+        uint64_t slice_end = slice_start + slice_size;
+        if (i == 1) {
+            slice_end = num_sectors;
+        }
+        threads.emplace_back([sf, i, source, slice_start, slice_end, xts_key, xts_tweak, iv_offset](mio::shared_mmap_sink output) {
+            sf.wait();
+            auto xts = Cipher::AES::XTS_128(xts_key, xts_tweak, SECTOR_SIZE);
+            printf("Thread % 2d sectors %ld - %ld\n", i, slice_start, slice_end);
+            //uint64_t num_sectors = source_len / SECTOR_SIZE;
+            for (uint64_t sector_index = slice_start; sector_index < slice_end; ++sector_index) {
+                xts.crypt(Cipher::Mode::Decrypt, sector_index + iv_offset, &source[SECTOR_SIZE * sector_index], &output[SECTOR_SIZE * sector_index]);
+            }
+        }, output);
+        slice_start += slice_size;
+    }
+    // kick off threads
+    p.set_value();
+
+    // wait for everything to finish
+    for (auto &t: threads) {
+        t.join();
+    }
+
+
+/*
     auto xts = Cipher::AES::XTS_128(xts_key, xts_tweak, SECTOR_SIZE);
 
     uint64_t num_sectors = source_len / SECTOR_SIZE;
     for (uint64_t sector_index = 0; sector_index < num_sectors; ++sector_index) {
         xts.crypt(Cipher::Mode::Decrypt, sector_index + iv_offset, &source[SECTOR_SIZE * sector_index], &output[SECTOR_SIZE * sector_index]);
     }
-
+*/
     return 0;
 }
