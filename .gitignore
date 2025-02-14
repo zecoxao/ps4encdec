@@ -1,3 +1,7 @@
 /data
 *.o
 ps4-hdd
+/x64
+/ps4-hdd_build
+ps4-hdd.vcxproj.filters
+ps4-hdd.vcxproj.user
