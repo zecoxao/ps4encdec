@@ -1,0 +1,44 @@
+name: ps4-hdd cross-platform CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Makefile build
+      run: make
+    - uses: actions/upload-artifact@v4
+      with: 
+        compression-level: 9
+        name: ps4-hdd_Linux_x64_{github.sha}
+        path: ps4-hdd
+  macos-build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Makefile build
+      run: make -f Makefile.MacOS
+    - uses: actions/upload-artifact@v4
+      with: 
+        compression-level: 9
+        name: ps4-hdd_MacOS_Universal_{github.sha}
+        path: ps4-hdd
+  windows-build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+    - name: MSBuild
+      run: msbuild /m -p:Configuration=Release .
+    - uses: actions/upload-artifact@v4
+      with: 
+        compression-level: 9
+        name: ps4-hdd_Windows_x64_{github.sha}
+        path: x64/Release/ps4-hdd.exe
