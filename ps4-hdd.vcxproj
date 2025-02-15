@@ -124,13 +124,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="aes_xts.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="src/aes_xts.cpp" />
+    <ClCompile Include="src/main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AES.hpp" />
-    <ClInclude Include="aes_xts.hpp" />
-    <ClInclude Include="mio.hpp" />
+    <ClInclude Include="src/AES.hpp" />
+    <ClInclude Include="src/aes_xts.hpp" />
+    <ClInclude Include="src/mio.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

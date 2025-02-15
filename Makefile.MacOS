@@ -32,10 +32,10 @@ $(ARM64_OBJDIR):
 $(X64_OBJDIR):
 	@mkdir -p $(X64_OBJDIR)
 
-$(ARM64_OBJDIR)/%.o: %.cpp | $(ARM64_OBJDIR)
+$(ARM64_OBJDIR)/%.o: src/%.cpp | $(ARM64_OBJDIR)
 	$(CXX) -arch arm64 $(ARM64_CPPFLAGS) -c -o $@ $<
 
-$(X64_OBJDIR)/%.o: %.cpp | $(X64_OBJDIR)
+$(X64_OBJDIR)/%.o: src/%.cpp | $(X64_OBJDIR)
 	$(CXX) -arch x86_64 $(X64_CPPFLAGS) -c -o $@ $<
 
 #$(TARGET): $(info $(shell $(CXX) --version))
