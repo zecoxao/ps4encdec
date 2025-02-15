@@ -38,6 +38,7 @@ $(ARM64_OBJDIR)/%.o: %.cpp | $(ARM64_OBJDIR)
 $(X64_OBJDIR)/%.o: %.cpp | $(X64_OBJDIR)
 	$(CXX) -arch x86_64 $(X64_CPPFLAGS) -c -o $@ $<
 
+#$(TARGET): $(info $(shell $(CXX) --version))
 $(TARGET): $(TARGET_X64) $(TARGET_ARM64)
 	lipo $^ -create -output $@
 	@rm $^

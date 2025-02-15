@@ -8,6 +8,7 @@ STRIP=strip
 #AES_FLAGS = -D USE_CXX_AES
 CPPFLAGS=$(BASE_CPPFLAGS) -D USE_INTEL_AESNI -maes
 
+#$(TARGET): $(info $(shell $(CXX) --version))
 $(TARGET): $(OBJS)
 	$(CXX) $(CPPFLAGS) $(OBJS) -o $(TARGET)
 	$(STRIP) --strip-all $(TARGET)
