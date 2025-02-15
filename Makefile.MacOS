@@ -1,0 +1,47 @@
+include Common.mak
+CC=clang
+CXX=clang++
+STRIP=strip
+ARM64_CPPFLAGS=$(BASE_CPPFLAGS) -D USE_NEON_AES
+X64_CPPFLAGS=$(BASE_CPPFLAGS) -D USE_INTEL_AESNI -maes
+
+TARGET_X64 = ps4-hdd_x64
+TARGET_ARM64 = ps4-hdd_arm64
+TARGET = ps4-hdd
+
+X64_OBJDIR=build_x64
+ARM64_OBJDIR=build_arm64
+
+ARM64_OBJS=$(addprefix $(ARM64_OBJDIR)/, $(OBJS))
+X64_OBJS=$(addprefix $(X64_OBJDIR)/, $(OBJS))
+
+all: $(TARGET)
+
+
+$(TARGET_X64): $(X64_OBJS)
+	$(CXX) -arch x86_64 $(X64_CPPFLAGS) -o $@ $^
+	$(STRIP) $@
+
+$(TARGET_ARM64): $(ARM64_OBJS)
+	$(CXX) -arch arm64 $(ARM64_CPPFLAGS) -o $@ $^
+	$(STRIP) $@
+
+$(ARM64_OBJDIR):
+	@mkdir -p $(ARM64_OBJDIR)
+
+$(X64_OBJDIR):
+	@mkdir -p $(X64_OBJDIR)
+
+$(ARM64_OBJDIR)/%.o: %.cpp | $(ARM64_OBJDIR)
+	$(CXX) -arch arm64 $(ARM64_CPPFLAGS) -c -o $@ $<
+
+$(X64_OBJDIR)/%.o: %.cpp | $(X64_OBJDIR)
+	$(CXX) -arch x86_64 $(X64_CPPFLAGS) -c -o $@ $<
+
+$(TARGET): $(TARGET_X64) $(TARGET_ARM64)
+	lipo $^ -create -output $@
+	@rm $^
+
+.PHONY: clean
+clean:
+	rm -rf $(TARGET) $(ARM64_OBJDIR) $(X64_OBJDIR) $(MACOS_TARGET_X64) $(MACOS_TARGET_ARM64)

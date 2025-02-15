@@ -19,7 +19,7 @@ static inline void print_hex(const char * label, const std::vector<uint8_t> &byt
     for (auto &hex: bytes) {
         std::print("{:02X}", hex);
     }
-    std::println();
+    std::println("");
 }
 
 uint8_t hex_to_nibble(char input) {
